@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBTI Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .question {
+            margin-bottom: 20px;
+        }
+        .results {
+            margin-top: 30px;
+        }
+        canvas {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>MBTI Quiz</h1>
+    <div id="quiz">
+        <div id="intro">
+            <p>Welcome to the MBTI quiz! Please provide some details about yourself.</p>
+            <label for="name">Name: </label>
+            <input type="text" id="name"><br>
+            <label for="age">Age: </label>
+            <input type="number" id="age"><br>
+            <label for="city">City: </label>
+            <input type="text" id="city"><br>
+            <button id="startQuiz">Start Quiz</button>
+        </div>
+        <div id="questions" style="display: none;">
+            <div class="question" id="questionContainer">
+                <!-- Questions will be inserted here dynamically -->
+            </div>
+            <button id="nextQuestion" style="display: none;">Next</button>
+        </div>
+        <div id="results" style="display: none;">
+            <h2>Your MBTI Results</h2>
+            <canvas id="mbtiChart" width="500" height="400"></canvas>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+    <script>
+        const quizData = [
+            { question: "Do you prefer spending time with others or alone?", trait: "E", inverseTrait: "I" },
+            { question: "Do you focus on the big picture or details?", trait: "N", inverseTrait: "S" },
+            { question: "Do you make decisions based on logic or emotions?", trait: "T", inverseTrait: "F" },
+            { question: "Do you prefer a structured lifestyle or going with the flow?", trait: "J", inverseTrait: "P" },
+            { question: "Do you gain energy in social settings or feel drained?", trait: "E", inverseTrait: "I" },
+            { question: "Do you trust intuition or rely on facts?", trait: "N", inverseTrait: "S" },
+            { question: "Do you value fairness or compassion more?", trait: "T", inverseTrait: "F" },
+            { question: "Do you plan your day or adapt as you go?", trait: "J", inverseTrait: "P" }
+        ];
+
+        let userInfo = {};
+        let currentQuestionIndex = 0;
+        let traitScores = { E: 0, I: 0, N: 0, S: 0, T: 0, F: 0, J: 0, P: 0 };
+
+        document.getElementById("startQuiz").addEventListener("click", () => {
+            userInfo.name = document.getElementById("name").value;
+            userInfo.age = document.getElementById("age").value;
+            userInfo.city = document.getElementById("city").value;
+            document.getElementById("intro").style.display = "none";
+            document.getElementById("questions").style.display = "block";
+            loadQuestion();
+        });
+
+        document.getElementById("nextQuestion").addEventListener("click", () => {
+            const selectedValue = document.querySelector('input[name="answer"]:checked');
+            if (selectedValue) {
+                const value = parseInt(selectedValue.value);
+                const currentQuestion = quizData[currentQuestionIndex];
+                traitScores[currentQuestion.trait] += value;
+                traitScores[currentQuestion.inverseTrait] += (10 - value);
+
+                currentQuestionIndex++;
+                if (currentQuestionIndex < quizData.length) {
+                    loadQuestion();
+                } else {
+                    showResults();
+                }
+            }
+        });
+
+        function loadQuestion() {
+            const currentQuestion = quizData[currentQuestionIndex];
+            const questionContainer = document.getElementById("questionContainer");
+
+            questionContainer.innerHTML = `
+                <p>${currentQuestion.question}</p>
+                <label><input type="radio" name="answer" value="1"> Strongly Disagree</label><br>
+                <label><input type="radio" name="answer" value="3"> Disagree</label><br>
+                <label><input type="radio" name="answer" value="5"> Neutral</label><br>
+                <label><input type="radio" name="answer" value="7"> Agree</label><br>
+                <label><input type="radio" name="answer" value="9"> Strongly Agree</label><br>
+            `;
+
+            document.getElementById("nextQuestion").style.display = "block";
+        }
+
+        function showResults() {
+            document.getElementById("questions").style.display = "none";
+            document.getElementById("results").style.display = "block";
+            drawChart();
+        }
+
+        function drawChart() {
+            const canvas = document.getElementById("mbtiChart");
+            const ctx = canvas.getContext("2d");
+            const traits = ["E", "I", "N", "S", "T", "F", "J", "P"];
+            const polarities = ["Extrovert", "Introvert", "Intuitive", "Sensing", "Thinking", "Feeling", "Judging", "Perceiving"];
+
+            const scores = traits.map(trait => {
+                return traitScores[trait] / (traitScores[trait] + traitScores[getInverseTrait(trait)]);
+            });
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = "16px Arial";
+
+            for (let i = 0; i < traits.length / 2; i++) {
+                const x = 50;
+                const y = 50 + i * 80;
+                ctx.fillText(polarities[i * 2], x, y);
+                ctx.fillText(polarities[i * 2 + 1], x + 400, y);
+
+                ctx.beginPath();
+                ctx.moveTo(x + 100, y - 5);
+                ctx.lineTo(x + 400, y - 5);
+                ctx.strokeStyle = "#ccc";
+                ctx.stroke();
+
+                const markerX = x + 100 + scores[i] * 300;
+                ctx.beginPath();
+                ctx.arc(markerX, y - 5, 8, 0, Math.PI * 2);
+                ctx.fillStyle = "blue";
+                ctx.fill();
+            }
+        }
+
+        function getInverseTrait(trait) {
+            const mapping = { E: "I", I: "E", N: "S", S: "N", T: "F", F: "T", J: "P", P: "J" };
+            return mapping[trait];
+        }
+    </script>
+</body>
+</html>
